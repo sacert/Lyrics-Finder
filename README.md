@@ -1,4 +1,4 @@
-# Lyrics-Finder
+# Lyrics Finder
 
 A simple program which allows the user to search up and find lyrics. Will constantly add modules to the existing program to increase ease of use as well as implement more features.
 
