@@ -36,9 +36,6 @@ public class FXController implements Initializable {
 	@FXML private TextField getLyricsField;
 	@FXML private Button getLyricsButton;
 
-
-
-
 	@FXML
 	private void handleButtonAction(ActionEvent event)  {
 		lyricBox.clear();
