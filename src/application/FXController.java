@@ -4,11 +4,9 @@ package application;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -30,47 +28,50 @@ import org.json.*;
 
 public class FXController implements Initializable {
 
-	private final static String metrolyrics = "metrolyrics.com";
+	private final static String azlyrics = "azlyrics.com";
+	private final static String youtube = "www.youtube.com";
 
 	@FXML private TextArea lyricBox;
 	@FXML private TextField getLyricsField;
 	@FXML private Button getLyricsButton;
+	
+	private static String songTitle = "";
 
 	@FXML
-	private void handleButtonAction(ActionEvent event)  {
+	private void handleButtonAction(ActionEvent event) throws IOException, InterruptedException  {
 		lyricBox.clear();
 
 		String query = getLyricsField.getText();
 
+		// get lyrics for song
 		List<String> googleURLResults = null;
-		try {
-			googleURLResults = googleSearchQueryResults(metrolyrics,query);
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		//		
+		googleURLResults = googleSearchQueryResults(azlyrics,query);
 		List<String> lyricsURL;
-		try {		
-			lyricsURL = getSongLyricsFromMetroLyrics(googleURLResults.get(0)); // Parse from the FIRST result.
-			printLyricsToUI(lyricsURL);
-
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		lyricsURL = getSongLyricsFromAZLyrics(googleURLResults.get(0)); // Parse from the FIRST result.
+		printLyricsToUI(lyricsURL);
+		
+		// get youtube link for song
+		googleURLResults = googleSearchQueryResults(youtube,query);
+		List<String> YoutubeURL = new ArrayList<String>(); // leave in a List so that in the future, we can look at which to download
+		YoutubeURL.add(googleURLResults.get(0));
+		YoutubeURL.set(0, YoutubeURL.get(0).replace("https://www.youtube.com/watch%3Fv%3D", "")); 
+		downloadSong(YoutubeURL.get(0));
 	}
 
-
-
-
+	// if not using, delete
 	@Override
 	public void initialize(URL arg0, ResourceBundle arg1) {
 
 	}
-
-
-
+	
+	static void downloadSong(String youtubeReference) throws IOException, InterruptedException {
+		
+		DownloadThread dt = new DownloadThread(songTitle, youtubeReference);
+		dt.start();
+		
+		// do you need to join threads in Java? 
+		// look into it later
+	}
 
 	static List<String> googleSearchQueryResults (String websiteToGetLyricsFrom, String lyricsQuery) throws IOException{
 
@@ -83,8 +84,6 @@ public class FXController implements Initializable {
 						+ websiteToGetLyricsFrom
 						+ "&userip="
 						+ usersIPAddres);
-
-		System.out.println(url.toString());
 
 		URLConnection connection = url.openConnection();
 		connection.addRequestProperty("Referer", "www.referrer.com");
@@ -105,38 +104,31 @@ public class FXController implements Initializable {
 
 		for(int i = 0 ; i < websiteLinksArray.length() ; i++){
 			azLyricsWebsites.add(websiteLinksArray.getJSONObject(i).getString("url"));
-
-			System.out.println("Link : " + azLyricsWebsites.get(i));
 		}
 		return azLyricsWebsites;
 	}
 
 
 
-	public static List<String> getSongLyricsFromMetroLyrics(String fullURLPath) throws IOException {
-
-		System.out.println("FULL PATH = " + fullURLPath);
+	public static List<String> getSongLyricsFromAZLyrics(String fullURLPath) throws IOException {
 
 		List<String> lyrics = new ArrayList<String>();		
-		//		Document doc = Jsoup.connect(lyricsURL + "/" + song.replace(" ", "-").toLowerCase() + "-lyrics-" + artist.replace(" ", "-").toLowerCase()).get();
 		Document doc = Jsoup.connect(fullURLPath).get();
-		String title = doc.title();
-		title = title.substring(0, title.length()-20);
+		String title = titleFixer(doc.title());
+		
+		songTitle = title;
+		
 		System.out.println(title);
-		System.out.println("===============");
 
-		// get the total number of verses 
-		int verseSize = doc.select("p.verse").size();
-		for(int i = 0; i < verseSize; i++) {
-			// get each verse
-			Element p = doc.select("div.lyrics-body").get(0).child(0).child(i);
-			for(Node e: p.childNodes()) {
-				if(e instanceof TextNode) {
-					lyrics.add(((TextNode)e).getWholeText());
-				}
+		// get each line
+		Element p = doc.select("div").get(22);
+		for(Node e: p.childNodes()) {
+			if(e instanceof TextNode) {
+				lyrics.add(((TextNode)e).text() + "\n");
 			}
-			lyrics.add("\n\n");
 		}
+		// first line is a white space, remove it
+		lyrics.remove(0);
 
 		return lyrics;
 	}
@@ -145,41 +137,49 @@ public class FXController implements Initializable {
 	public  void printLyricsToUI(List<String> lyrics) {
 
 		for(int i = 0; i < lyrics.size(); i++) {
-			System.out.print(lyrics.get(i));
 			lyricBox.setText(lyricBox.getText() + lyrics.get(i));
-			if(lyrics.get(i).contains(" ")) {
-				System.out.print(",");
-
-			}
 		}
 	}
 
 
-	private static String fetchIpFromAmazon() {
+	// Put into another class
+	private static String fetchIpFromAmazon() throws IOException {
 		URL url = null;
-		try {
-			url = new URL("http://checkip.amazonaws.com/");
-		} catch (MalformedURLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		url = new URL("http://checkip.amazonaws.com/");
 		BufferedReader br = null;
+		br = new BufferedReader(new InputStreamReader(url.openStream()));
 		try {
-			br = new BufferedReader(new InputStreamReader(url.openStream()));
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		try {
-			//			System.out.println(br.readLine());
 			return br.readLine();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
+		// shouldn't this be within the catch statement?
 		return "Failed to get IP from Amazon";
 	}
+	
+	private static String toTitleCase(String givenString) {
+	    String[] arr = givenString.split(" ");
+	    StringBuffer sb = new StringBuffer();
 
+	    for (int i = 0; i < arr.length; i++) {
+	        sb.append(Character.toUpperCase(arr[i].charAt(0)))
+	            .append(arr[i].substring(1)).append(" ");
+	    }          
+	    return sb.toString().trim();
+	}  
+	
+	private static String titleFixer(String title) {
+		title = title.substring(0, title.length());
+		title = title.toLowerCase();
+		title = toTitleCase(title);
+		
+		title = title.replace("Lyrics", "");
+		title = title.replace("  ", " ");
+		
+		return title;
+	}
+	
 }
 
 
