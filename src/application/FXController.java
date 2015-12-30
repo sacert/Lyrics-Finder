@@ -36,6 +36,7 @@ public class FXController implements Initializable {
 	@FXML private Button getLyricsButton;
 	
 	private static String songTitle = "";
+	private static String albumTitle = "";
 
 	@FXML
 	private void handleButtonAction(ActionEvent event) throws IOException, InterruptedException  {
@@ -108,8 +109,6 @@ public class FXController implements Initializable {
 		return azLyricsWebsites;
 	}
 
-
-
 	public static List<String> getSongLyricsFromAZLyrics(String fullURLPath) throws IOException {
 
 		List<String> lyrics = new ArrayList<String>();		
@@ -119,6 +118,10 @@ public class FXController implements Initializable {
 		songTitle = title;
 		
 		System.out.println(title);
+		
+		Element q = doc.select("div.album-panel").get(0).child(1);
+		albumTitle = q.text();
+		System.out.println(albumTitle);
 
 		// get each line
 		Element p = doc.select("div").get(22);
