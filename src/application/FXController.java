@@ -4,6 +4,7 @@ package application;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -37,6 +38,9 @@ public class FXController implements Initializable {
 	
 	private static String songTitle = "";
 	private static String albumTitle = "";
+	private static String bandArtist = "";
+	
+	public static List<String> googleImgURLResults = null;
 
 	@FXML
 	private void handleButtonAction(ActionEvent event) throws IOException, InterruptedException  {
@@ -44,8 +48,9 @@ public class FXController implements Initializable {
 
 		String query = getLyricsField.getText();
 
-		// get lyrics for song
 		List<String> googleURLResults = null;
+		
+		// get lyrics for song
 		googleURLResults = googleSearchQueryResults(azlyrics,query);
 		List<String> lyricsURL;
 		lyricsURL = getSongLyricsFromAZLyrics(googleURLResults.get(0)); // Parse from the FIRST result.
@@ -56,7 +61,9 @@ public class FXController implements Initializable {
 		List<String> YoutubeURL = new ArrayList<String>(); // leave in a List so that in the future, we can look at which to download
 		YoutubeURL.add(googleURLResults.get(0));
 		YoutubeURL.set(0, YoutubeURL.get(0).replace("https://www.youtube.com/watch%3Fv%3D", "")); 
+		googleImgURLResults = googleImageSearchQueryResults();
 		downloadSong(YoutubeURL.get(0));
+		System.out.println(googleImgURLResults);
 	}
 
 	// if not using, delete
@@ -108,6 +115,40 @@ public class FXController implements Initializable {
 		}
 		return azLyricsWebsites;
 	}
+	
+	static List<String> googleImageSearchQueryResults () throws IOException{
+
+		albumTitle = albumTitle.replace("\"", "");
+		albumTitle = albumTitle.substring(0, albumTitle.length()-7);
+		System.out.println(albumTitle + "!");
+		List<String> imageURLs = new ArrayList<String>();
+		
+		
+		URL url = new URL(
+				"https://www.googleapis.com/customsearch/v1?key=AIzaSyCHoGF1u8RytvaNeCk69iyD9ouwFBmsndQ&cx=007547444199860528947:flga7fapbrm&q="
+						+ bandArtist.replace(" ", "%20")
+						+ albumTitle.replace(" ", "%20")
+						+ "%20album%20cover%20art"
+						+ "&userip=&searchType=image&alt=json");
+		
+		HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+        conn.setRequestProperty("Accept", "application/json");
+        BufferedReader br = new BufferedReader(new InputStreamReader(
+                (conn.getInputStream())));
+
+        String output;
+        System.out.println("Output from Server .... \n");
+        while ((output = br.readLine()) != null) {
+            if(output.contains("\"link\":")) {
+            	imageURLs.add(output.substring(12, output.length()-2));
+            }
+        }
+
+        conn.disconnect();
+
+		return imageURLs;
+	}
 
 	public static List<String> getSongLyricsFromAZLyrics(String fullURLPath) throws IOException {
 
@@ -118,6 +159,11 @@ public class FXController implements Initializable {
 		songTitle = title;
 		
 		System.out.println(title);
+		
+		String[] breakTitle = songTitle.split("-");
+		bandArtist = breakTitle[0];
+		
+		System.out.println(bandArtist);
 		
 		Element q = doc.select("div.album-panel").get(0).child(1);
 		albumTitle = q.text();
