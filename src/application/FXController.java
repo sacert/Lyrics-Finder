@@ -2,15 +2,10 @@ package application;
 
 
 import java.awt.image.BufferedImage;
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
@@ -18,9 +13,6 @@ import java.util.List;
 import java.util.ResourceBundle;
 
 import javax.imageio.ImageIO;
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -36,11 +28,8 @@ import javafx.scene.SnapshotParameters;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.image.ImageViewBuilder;
-import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
@@ -71,7 +60,11 @@ public class FXController implements Initializable {
 
 	@FXML
 	private void handleQuickDownloadAction(ActionEvent event) throws IOException, InterruptedException  {
-		//lyricBox.clear();
+		
+		// To do: add pop-up prompting the user for input
+		if(getSearchField.getText().isEmpty()) {
+			return;
+		}
 
 		String query = getSearchField.getText();
 
@@ -104,6 +97,11 @@ public class FXController implements Initializable {
 	@FXML
 	private void handleSearchAction(ActionEvent event) throws IOException, InterruptedException  {
 
+		// To do: add pop-up prompting the user for input
+		if(getSearchField.getText().isEmpty()) {
+			return;
+		}
+		
 		String query = getSearchField.getText();
 		List<String> googleURLResults = null;
 		
@@ -131,6 +129,11 @@ public class FXController implements Initializable {
 	
 	@FXML
 	private void handleDownloadAction(ActionEvent event) throws IOException, InterruptedException  {
+		
+		// To do: add pop-up prompting the user for input
+		if(songLabelText.getText().isEmpty()) {
+			return;
+		}
 
 		downloadSong(YoutubeURL.get(0));
 	}
