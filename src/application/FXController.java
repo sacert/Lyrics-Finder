@@ -1,8 +1,13 @@
 package application;
 
 
+import java.awt.image.BufferedImage;
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -12,18 +17,34 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
 
+import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.effect.DropShadow;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.image.ImageViewBuilder;
+import javafx.scene.image.PixelWriter;
+import javafx.scene.image.WritableImage;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Text;
 
 import org.json.*;
 
@@ -33,20 +54,26 @@ public class FXController implements Initializable {
 	private final static String youtube = "www.youtube.com";
 
 	@FXML private TextArea lyricBox;
-	@FXML private TextField getLyricsField;
-	@FXML private Button getLyricsButton;
+	@FXML private TextField getSearchField;
+	@FXML private Button downloadButton;
+	@FXML private Text songLabelText;
+	@FXML private ImageView albumArt;
 	
-	private static String songTitle = "";
-	private static String albumTitle = "";
-	private static String bandArtist = "";
+	public static String songFullTitle = "";
+	public static String songTitle = "";
+	public static String albumTitle = "";
+	public static String bandArtist = "";
+	public static String albumYear = "";
 	
 	public static List<String> googleImgURLResults = null;
+	private List<String> YoutubeURL = new ArrayList<String>();
+	private static List<String> imageURLs = new ArrayList<String>();
 
 	@FXML
-	private void handleButtonAction(ActionEvent event) throws IOException, InterruptedException  {
-		lyricBox.clear();
+	private void handleQuickDownloadAction(ActionEvent event) throws IOException, InterruptedException  {
+		//lyricBox.clear();
 
-		String query = getLyricsField.getText();
+		String query = getSearchField.getText();
 
 		List<String> googleURLResults = null;
 		
@@ -62,19 +89,55 @@ public class FXController implements Initializable {
 		YoutubeURL.add(googleURLResults.get(0));
 		YoutubeURL.set(0, YoutubeURL.get(0).replace("https://www.youtube.com/watch%3Fv%3D", "")); 
 		googleImgURLResults = googleImageSearchQueryResults();
+		songLabelText.setText(songFullTitle);
 		downloadSong(YoutubeURL.get(0));
-		System.out.println(googleImgURLResults);
+		
+		albumArt.setImage(null);
+		
+		// set cover art album image in window
+		URL coverArtUrl = new URL(imageURLs.get(0));
+		BufferedImage img = ImageIO.read(coverArtUrl);
+		Image image = SwingFXUtils.toFXImage(img, null);
+		albumArt.setImage(image);
 	}
+	
+	@FXML
+	private void handleSearchAction(ActionEvent event) throws IOException, InterruptedException  {
 
-	// if not using, delete
-	@Override
-	public void initialize(URL arg0, ResourceBundle arg1) {
+		String query = getSearchField.getText();
+		List<String> googleURLResults = null;
+		
+		// get lyrics for song
+		googleURLResults = googleSearchQueryResults(azlyrics,query);
+		List<String> lyricsURL;
+		lyricsURL = getSongLyricsFromAZLyrics(googleURLResults.get(0)); // Parse from the FIRST result.
+		printLyricsToUI(lyricsURL);
+		
+		// get youtube link for song
+		googleURLResults = googleSearchQueryResults(youtube,query);
+		YoutubeURL.add(googleURLResults.get(0));
+		YoutubeURL.set(0, YoutubeURL.get(0).replace("https://www.youtube.com/watch%3Fv%3D", "")); 
+		googleImgURLResults = googleImageSearchQueryResults();
+		songLabelText.setText(songFullTitle);
+		
+		albumArt.setImage(null);
 
+		// set cover art album image in window
+		URL coverArtUrl = new URL(imageURLs.get(0));
+		BufferedImage img = ImageIO.read(coverArtUrl);
+		Image image = SwingFXUtils.toFXImage(img, null);
+		albumArt.setImage(image);
+	}
+	
+	@FXML
+	private void handleDownloadAction(ActionEvent event) throws IOException, InterruptedException  {
+
+		downloadSong(YoutubeURL.get(0));
 	}
 	
 	static void downloadSong(String youtubeReference) throws IOException, InterruptedException {
 		
-		DownloadThread dt = new DownloadThread(songTitle, youtubeReference);
+		DownloadThread dt = new DownloadThread(songFullTitle, youtubeReference);
 		dt.start();
 		
 		// do you need to join threads in Java? 
@@ -119,11 +182,10 @@ public class FXController implements Initializable {
 	static List<String> googleImageSearchQueryResults () throws IOException{
 
 		albumTitle = albumTitle.replace("\"", "");
-		albumTitle = albumTitle.substring(0, albumTitle.length()-7);
-		System.out.println(albumTitle + "!");
-		List<String> imageURLs = new ArrayList<String>();
+		albumYear = albumTitle.substring(albumTitle.length()-5, albumTitle.length()-1);
+		albumTitle = albumTitle.substring(0, albumTitle.length()-7);		
 		
-		
+		imageURLs.clear();
 		URL url = new URL(
 				"https://www.googleapis.com/customsearch/v1?key=AIzaSyCHoGF1u8RytvaNeCk69iyD9ouwFBmsndQ&cx=007547444199860528947:flga7fapbrm&q="
 						+ bandArtist.replace(" ", "%20")
@@ -138,13 +200,12 @@ public class FXController implements Initializable {
                 (conn.getInputStream())));
 
         String output;
-        System.out.println("Output from Server .... \n");
         while ((output = br.readLine()) != null) {
             if(output.contains("\"link\":")) {
             	imageURLs.add(output.substring(12, output.length()-2));
             }
         }
-
+        
         conn.disconnect();
 
 		return imageURLs;
@@ -156,18 +217,14 @@ public class FXController implements Initializable {
 		Document doc = Jsoup.connect(fullURLPath).get();
 		String title = titleFixer(doc.title());
 		
-		songTitle = title;
+		songFullTitle = title;
 		
-		System.out.println(title);
-		
-		String[] breakTitle = songTitle.split("-");
+		String[] breakTitle = songFullTitle.split("-");
 		bandArtist = breakTitle[0];
-		
-		System.out.println(bandArtist);
+		songTitle = breakTitle[1];
 		
 		Element q = doc.select("div.album-panel").get(0).child(1);
 		albumTitle = q.text();
-		System.out.println(albumTitle);
 
 		// get each line
 		Element p = doc.select("div").get(22);
@@ -186,7 +243,7 @@ public class FXController implements Initializable {
 	public  void printLyricsToUI(List<String> lyrics) {
 
 		for(int i = 0; i < lyrics.size(); i++) {
-			lyricBox.setText(lyricBox.getText() + lyrics.get(i));
+			//lyricBox.setText(lyricBox.getText() + lyrics.get(i));
 		}
 	}
 
@@ -227,6 +284,24 @@ public class FXController implements Initializable {
 		title = title.replace("  ", " ");
 		
 		return title;
+	}
+
+	@Override
+	public void initialize(URL location, ResourceBundle resources) {
+		
+		getSearchField.setStyle("-fx-text-inner-color: #909090");
+		
+		Rectangle clip = new Rectangle(albumArt.getFitWidth(), albumArt.getFitHeight());
+		clip.setArcWidth(20);
+		clip.setArcHeight(20);
+		albumArt.setClip(clip);
+		
+		SnapshotParameters parameters = new SnapshotParameters();
+		parameters.setFill(Color.rgb(241, 241, 241));
+		WritableImage image = albumArt.snapshot(parameters, null);
+
+		albumArt.setImage(image);
+		
 	}
 	
 }

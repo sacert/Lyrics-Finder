@@ -48,7 +48,7 @@ public class DownloadThread extends Thread{
 		Process ffca = null;
 		try {
 			//ffmpeg32 -i in.mp3 -metadata title="The Title You Want" -metadata artist="Artist Name" -metadata album="Name of the Album" out.mp3
-			ffca = Runtime.getRuntime().exec(new String[] {"/usr/local/bin/ffmpeg", "-i", "/Users/stephen/Desktop/temp.mp3", "-i" , FXController.googleImgURLResults.get(0), "-map", "0:0" ,"-map", "1:0", "-c", "copy", "-id3v2_version", "3", "/Users/stephen/Desktop/" + songTitle +".mp3",});
+			ffca = Runtime.getRuntime().exec(new String[] {"/usr/local/bin/ffmpeg", "-i", "/Users/stephen/Desktop/temp.mp3", "-i" , FXController.googleImgURLResults.get(0), "-metadata", "title=" + FXController.songTitle, "-metadata", "artist=" + FXController.bandArtist, "-metadata", "album=" + FXController.albumTitle, "-metadata", "date=" + FXController.albumYear, "-map", "0:0" ,"-map", "1:0", "-c", "copy", "-id3v2_version", "3", "/Users/stephen/Desktop/" + songTitle +".mp3",});
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
