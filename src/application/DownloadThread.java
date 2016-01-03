@@ -11,6 +11,7 @@ public class DownloadThread extends Thread{
 	{
 		this.songTitle = songTitle;
 		this.youtubeReference = youtubeReference;
+		
 	}
 
 	@Override

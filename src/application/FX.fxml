@@ -20,20 +20,24 @@
          <styleClass>
             <String fx:value="buttons" />
             <String fx:value="buttonClick" />
-         </styleClass></Button>
+         </styleClass>
+      </Button>
       <Button fx:id="getLyricsButton" layoutX="21.0" layoutY="102.0" mnemonicParsing="false" onAction="#handleQuickDownloadAction" prefHeight="26.0" prefWidth="130.0" stylesheets="@application.css" text="Quick Download" textFill="#787878">
          <styleClass>
             <String fx:value="buttons" />
             <String fx:value="buttonClick" />
-         </styleClass></Button>
+         </styleClass>
+      </Button>
       <Button fx:id="downloadButton" layoutX="266.0" layoutY="146.0" mnemonicParsing="false" onAction="#handleDownloadAction" prefHeight="23.0" prefWidth="23.0" stylesheets="@application.css">
          <styleClass>
             <String fx:value="downloadButton" />
             <String fx:value="buttons" />
-         </styleClass></Button>
+         </styleClass>
+      </Button>
       <Pane layoutX="21.0" layoutY="146.0" prefHeight="22.0" prefWidth="234.0" styleClass="buttons" stylesheets="@application.css">
          <children>
             <Text fx:id="songLabelText" fill="#787878" layoutX="7.0" layoutY="17.0" strokeType="OUTSIDE" strokeWidth="0.0" textAlignment="CENTER" wrappingWidth="218.68292617797852" />
-         </children></Pane>
+         </children>
+      </Pane>
    </children>
 </Pane>
