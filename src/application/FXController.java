@@ -242,14 +242,12 @@ public class FXController implements Initializable {
 		return lyrics;
 	}
 
-
 	public  void printLyricsToUI(List<String> lyrics) {
 
 		for(int i = 0; i < lyrics.size(); i++) {
 			//lyricBox.setText(lyricBox.getText() + lyrics.get(i));
 		}
 	}
-
 
 	// Put into another class
 	private static String fetchIpFromAmazon() throws IOException {
